@@ -886,7 +886,7 @@ def grib_generator(filename, auto_regularise=True):
 
 def load_cubes(filenames, callback=None, auto_regularise=True):
     """
-    Returns a generator of cubes from the given list of filenames.
+    Returns a generator of GRIB cubes from the given list of filenames.
 
     Args:
 
@@ -898,38 +898,12 @@ def load_cubes(filenames, callback=None, auto_regularise=True):
     * callback (callable function):
         Function which can be passed on to :func:`iris.io.run_callback`.
 
-    * auto_regularise (*True* | *False*):
-        If *True*, any cube defined on a reduced grid will be interpolated
-        to an equivalent regular grid. If *False*, any cube defined on a
-        reduced grid will be loaded on the raw reduced grid with no shape
-        information. If `iris.FUTURE.strict_grib_load` is `True` then this
-        keyword has no effect, raw grids are always used. If the older GRIB
-        loader is in use then the default behaviour is to interpolate cubes
-        on a reduced grid to an equivalent regular grid.
-
-        .. deprecated:: 1.8. Please use strict_grib_load and regrid instead.
-
-
     """
-    if iris.FUTURE.strict_grib_load:
-        grib_loader = iris_rules.Loader(
+    from ._convert_shim import convert
+    grib_loader = iris_rules.Loader(
             GribMessage.messages_from_filename,
             {},
-            old_load_convert)
-    else:
-        if auto_regularise is not None:
-            # The old loader supports the auto_regularise keyword, but in
-            # deprecation mode, so warning if it is found.
-            msg = ('the`auto_regularise` kwarg is deprecated and '
-                   'will be removed in a future release. Resampling '
-                   'quasi-regular grids on load will no longer be '
-                   'available.  Resampling should be done on the '
-                   'loaded cube instead using Cube.regrid.')
-            warn_deprecated(msg)
-
-        grib_loader = iris_rules.Loader(
-            grib_generator, {'auto_regularise': auto_regularise},
-            new_load_convert)
+            convert)
     return iris_rules.load_cubes(filenames, callback, grib_loader)
 
 
